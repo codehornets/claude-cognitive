@@ -9,12 +9,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+*Nothing yet - stay tuned for v1.2!*
+
+---
+
+## [1.1.0] - 2024-12-31
+
 ### Added
-- Concept documentation (attention decay, context tiers, pool coordination)
-- Guide documentation (large codebases, team setup, migration)
-- Reference documentation (template syntax, pool protocol, token budgets)
-- Monorepo example
-- Sanitized MirrorBot production example
+- **Attention History Tracking**: Every turn now logs structured attention state to `~/.claude/attention_history.jsonl`
+  - Turn-by-turn record of which files were HOT/WARM/COLD
+  - Tracks transitions between tiers (what got promoted, what decayed)
+  - Captures prompt keywords and activated files
+  - Records total context size per turn
+  - 30-day retention (configurable)
+
+- **History CLI** (`scripts/history.py`): Query and view attention trajectory over time
+  - Filter by time window (`--since 2h`, `--since 1d`)
+  - Filter by instance ID (`--instance A`)
+  - Filter by file pattern (`--file ppe`)
+  - Show only transitions (`--transitions`)
+  - Summary statistics (`--stats`)
+  - JSON output (`--format json`)
+  - Last N entries (`--last 20` default)
+
+- **Fractal Documentation Support**: Nested file routing for hierarchical zoom
+  - Added support for `modules/t3-telos/trajectories/convergent.md` pattern
+  - Parent files co-activate children on mention
+  - Child files co-activate parent for context
+  - Enables "zoom in" to specific details while maintaining overview
+
+- **Documentation**:
+  - Comprehensive [Fractal Documentation](./docs/concepts/fractal-docs.md) conceptual guide
+  - Added History Tracking section to README
+  - Updated Architecture diagram to include history.py
+  - Updated Roadmap to reflect v1.1 as current
+
+### Changed
+- `context-router-v2.py`: Now persists turn-by-turn attention state with transitions
+  - Added `compute_transitions()` to track tier changes
+  - Added `append_history()` to log structured data
+  - Deep copy state before mutation for accurate diff tracking
+  - Fail-safe error handling (history write errors don't block hook)
+
+### Why This Matters
+The router always knew which files were HOT/WARM/COLD. Now that knowledge persists, letting you answer questions like:
+- "What path did we take to stabilize PPE last week?"
+- "Which modules got neglected during the anticipatory coherence sprint?"
+- "Show me attention flow around t3-telos since Dec 25"
+
+**Launch Metrics (48 hours):**
+- 33,000+ Reddit views
+- #1 post on r/claudecode
+- #18 on Hacker News
+- 80+ GitHub stars
+- 6 forks
+- Active Discord engagement with beta users
 
 ---
 
@@ -137,5 +186,6 @@ See [LICENSE](./LICENSE) for full text.
 
 ---
 
-[Unreleased]: https://github.com/GMaN1911/claude-cognitive/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/GMaN1911/claude-cognitive/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/GMaN1911/claude-cognitive/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/GMaN1911/claude-cognitive/releases/tag/v1.0.0

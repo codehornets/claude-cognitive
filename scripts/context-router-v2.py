@@ -4,19 +4,9 @@ Attentional Context Router v2.0
 ================================
 Implements working memory dynamics for Claude Code context injection.
 
-⚠️  IMPORTANT: CUSTOMIZE FOR YOUR PROJECT ⚠️
-===============================================
-The KEYWORDS section (line 75) contains MirrorBot-specific examples.
-These work out-of-the-box but give BETTER results when customized.
-
-See CUSTOMIZATION.md for step-by-step guide.
-
-Quick: Works immediately with 50-70% savings
-Better: Customize keywords for 80-95% savings
-
 Architecture:
 - HOT (>0.8): Full file injection - active development
-- WARM (0.25-0.8): Header/summary only - background awareness
+- WARM (0.25-0.8): Header/summary only - background awareness  
 - COLD (<0.25): Evicted from context
 
 Features:
@@ -45,6 +35,10 @@ import re
 # State file location
 PROJECT_STATE = Path(".claude/attn_state.json")
 GLOBAL_STATE = Path.home() / ".claude" / "attn_state.json"
+HISTORY_FILE = Path.home() / ".claude" / "attention_history.jsonl"
+
+# History retention
+MAX_HISTORY_DAYS = 30  # Archive entries older than 30 days
 
 # Decay rates per category (how fast files fade when not mentioned)
 # Higher = slower decay (more persistent)
@@ -80,18 +74,6 @@ PINNED_FILES = [
 # ============================================================================
 # KEYWORD MAPPINGS
 # What words/phrases activate which files
-# ============================================================================
-# ⚠️  CUSTOMIZE THIS SECTION FOR YOUR PROJECT
-#
-# These are MirrorBot examples showing the pattern.
-# They'll work but aren't optimized for your codebase.
-#
-# For customization guide: See CUSTOMIZATION.md
-#
-# Pattern:
-#   "path/to/file.md": [
-#       "keyword1", "keyword2", "technical term", "common phrase"
-#   ]
 # ============================================================================
 
 KEYWORDS: Dict[str, List[str]] = {
@@ -145,11 +127,26 @@ KEYWORDS: Dict[str, List[str]] = {
     ],
     "modules/t3-telos.md": [
         "t3", "t³", "telos", "trajectory", "tesseract", "curvature steering",
-        "gtf", "global topology", "resonant memory", "divergence", "primitives",
-        "fitness", "advantage", "surprise", "worldtrace", "t3_client", "t3_engine",
+        "gtf", "global topology", "resonant memory", "worldtrace", "t3_client", "t3_engine",
         "emotional", "dynamics", "containment", "tier", "dps", "regime", "stability",
         "emotional state", "affect", "user model", "behavioral", "prediction",
         "user state", "mirror-path", "user trajectory"
+    ],
+    "modules/t3-telos/trajectories/convergent.md": [
+        "convergence", "converging", "convergent", "stable attractor", "equilibrium",
+        "trajectory convergence", "settling", "stabilizing", "stable state"
+    ],
+    "modules/t3-telos/trajectories/divergent.md": [
+        "divergence", "diverging", "divergent", "unstable", "chaotic",
+        "trajectory divergence", "destabilizing", "escaping", "runaway"
+    ],
+    "modules/t3-telos/trajectories/oscillatory.md": [
+        "oscillation", "oscillating", "oscillatory", "cycling", "periodic",
+        "rhythm", "wave", "pendulum", "back and forth"
+    ],
+    "modules/t3-telos/primitives.md": [
+        "primitives", "fundamental", "basic behaviors", "core patterns",
+        "atomic", "elemental"
     ],
     "modules/cvmp-transformer.md": [
         "cvmp transformer", "cvmp model", "cvmp", "transformer", "401m", "oracle",
@@ -232,6 +229,22 @@ CO_ACTIVATION: Dict[str, List[str]] = {
         "modules/cvmp-transformer.md",  # T³ works with CVMP
         "modules/anticipatory-coherence.md",  # T³ uses ACP projections
         "modules/pipeline.md",          # T³ part of pipeline
+        "modules/t3-telos/trajectories/convergent.md",  # Nested detail
+        "modules/t3-telos/trajectories/divergent.md",
+        "modules/t3-telos/trajectories/oscillatory.md",
+        "modules/t3-telos/primitives.md",
+    ],
+    "modules/t3-telos/trajectories/convergent.md": [
+        "modules/t3-telos.md",  # Child boosts parent
+    ],
+    "modules/t3-telos/trajectories/divergent.md": [
+        "modules/t3-telos.md",
+    ],
+    "modules/t3-telos/trajectories/oscillatory.md": [
+        "modules/t3-telos.md",
+    ],
+    "modules/t3-telos/primitives.md": [
+        "modules/t3-telos.md",
     ],
     "modules/intelligence.md": [
         "modules/cvmp-transformer.md",  # Intelligence uses CVMP oracle
@@ -461,6 +474,62 @@ def build_context_output(state: dict, docs_root: Path) -> Tuple[str, dict]:
 
 
 # ============================================================================
+# ATTENTION HISTORY TRACKING
+# ============================================================================
+
+def compute_transitions(prev_state: dict, curr_state: dict) -> dict:
+    """Compute what moved between tiers."""
+    transitions = {"to_hot": [], "to_warm": [], "to_cold": []}
+
+    for path, score in curr_state["scores"].items():
+        prev_score = prev_state.get("scores", {}).get(path, 0.0)
+        prev_tier = get_tier(prev_score)
+        curr_tier = get_tier(score)
+
+        if curr_tier != prev_tier:
+            if curr_tier == "HOT":
+                transitions["to_hot"].append(path)
+            elif curr_tier == "WARM":
+                transitions["to_warm"].append(path)
+            else:
+                transitions["to_cold"].append(path)
+
+    return transitions
+
+
+def append_history(state: dict, prev_state: dict, activated: Set[str], prompt: str, stats: dict):
+    """Append structured entry to history log."""
+
+    # Extract keywords from prompt (simple: first 8 significant words)
+    stop_words = {"the", "a", "an", "is", "are", "to", "for", "and", "or", "in", "on", "it", "this", "that", "with", "of"}
+    words = [w.lower() for w in prompt.split() if len(w) > 2 and w.lower() not in stop_words][:8]
+
+    entry = {
+        "turn": state["turn_count"],
+        "timestamp": datetime.now().isoformat(),
+        "instance_id": os.environ.get("CLAUDE_INSTANCE", "default"),
+        "prompt_keywords": words,
+        "activated": sorted(list(activated)),
+        "hot": sorted([p for p, s in state["scores"].items() if get_tier(s) == "HOT"]),
+        "warm": sorted([p for p, s in state["scores"].items() if get_tier(s) == "WARM"]),
+        "cold_count": stats["cold"],
+        "transitions": compute_transitions(prev_state, state),
+        "total_chars": stats.get("total_chars", 0)
+    }
+
+    try:
+        # Ensure history file exists
+        if not HISTORY_FILE.exists():
+            HISTORY_FILE.parent.mkdir(exist_ok=True)
+            HISTORY_FILE.touch()
+
+        with open(HISTORY_FILE, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass  # Don't fail hook on history write error
+
+
+# ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 
@@ -483,17 +552,22 @@ def main():
     # Determine docs root (configurable via env or default)
     # ALWAYS use global ~/.claude (enforced after documentation consolidation)
     docs_root = Path(os.environ.get("CONTEXT_DOCS_ROOT", str(Path.home() / ".claude")))
-    
+
     # Load state
     state_file = get_state_file()
-    state = load_state(state_file)
-    
+    prev_state = load_state(state_file)  # Keep copy before mutation
+    state = json.loads(json.dumps(prev_state))  # Deep copy for modification
+
     # Update attention based on prompt
     state, activated = update_attention(state, prompt)
-    
+
     # Build output
     output, stats = build_context_output(state, docs_root)
-    
+    stats["total_chars"] = len(output)  # Add total chars to stats
+
+    # Append to history log (before save, so turn_count is correct)
+    append_history(state, prev_state, activated, prompt, stats)
+
     # Save state for next turn
     save_state(state_file, state)
     

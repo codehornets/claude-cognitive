@@ -197,12 +197,131 @@ BLOCKS: Session management refactor can proceed
 
 ---
 
+## History Tracking (v1.1+)
+
+**Claude Cognitive now remembers its own attention.** Every turn is logged with structured data showing which files were HOT/WARM/COLD and how they transitioned between tiers.
+
+### Why This Matters
+
+The router always computed attention scores. Now they persist as queryable history:
+- **Replay development trajectories** - "How did we stabilize the PPE last week?"
+- **Identify neglected modules** - "Which files got ignored during the sprint?"
+- **Debug attention behavior** - "Why didn't convergent.md activate when I mentioned convergence?"
+
+### View History
+
+```bash
+# Last 20 turns
+python3 ~/.claude/scripts/history.py
+
+# Last 2 hours
+python3 ~/.claude/scripts/history.py --since 2h
+
+# Filter by file pattern
+python3 ~/.claude/scripts/history.py --file ppe
+
+# Show only tier transitions
+python3 ~/.claude/scripts/history.py --transitions
+
+# Summary statistics
+python3 ~/.claude/scripts/history.py --stats
+
+# Filter by instance
+python3 ~/.claude/scripts/history.py --instance A
+```
+
+### Example Output
+
+```
+============================================================
+  2025-12-31
+============================================================
+
+[18:43:21] Instance A | Turn 47
+  Query: refactor ppe routing tier collapse
+  🔥 HOT: ppe-anticipatory-coherence.md, t3-telos.md
+  🌡️  WARM: orin.md, pipeline.md
+  ⬆️  Promoted to HOT: ppe-anticipatory-coherence.md
+  ⬇️  Decayed to COLD: img-to-asus.md
+
+[19:22:35] Instance A | Turn 48
+  Query: what divergence dynamics?
+  🔥 HOT: divergent.md, t3-telos.md, cvmp-transformer.md
+  🌡️  WARM: pipeline.md, orin.md (+3 more)
+  ⬆️  Promoted to HOT: divergent.md
+```
+
+### Statistics View
+
+```bash
+python3 ~/.claude/scripts/history.py --stats --since 7d
+```
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                    ATTENTION STATISTICS                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+Total turns: 342
+Time range: 2025-12-24 to 2025-12-31
+
+Instances: {'A': 156, 'B': 98, 'default': 88}
+
+Most frequently HOT:
+   87 turns: pipeline.md
+   65 turns: t3-telos.md
+   43 turns: orin.md
+   38 turns: ppe-anticipatory-coherence.md
+   22 turns: divergent.md
+
+Most promoted to HOT:
+   23 times: ppe-anticipatory-coherence.md
+   18 times: divergent.md
+   12 times: convergent.md
+
+Busiest days:
+  2025-12-30: 156 turns
+  2025-12-29: 98 turns
+  2025-12-28: 88 turns
+
+Average context size: 18,420 chars
+```
+
+### History Entry Structure
+
+Each turn logs:
+```json
+{
+  "turn": 47,
+  "timestamp": "2025-12-31T18:43:21Z",
+  "instance_id": "A",
+  "prompt_keywords": ["refactor", "ppe", "routing", "tier"],
+  "activated": ["ppe-anticipatory-coherence.md"],
+  "hot": ["ppe-anticipatory-coherence.md", "t3-telos.md"],
+  "warm": ["orin.md", "pipeline.md"],
+  "cold_count": 12,
+  "transitions": {
+    "to_hot": ["ppe-anticipatory-coherence.md"],
+    "to_warm": ["orin.md"],
+    "to_cold": ["img-to-asus.md"]
+  },
+  "total_chars": 18420
+}
+```
+
+**File:** `~/.claude/attention_history.jsonl` (append-only, one entry per turn)
+
+**Retention:** 30 days (configurable in `context-router-v2.py`)
+
+---
+
 ## Architecture
 
 ```
 claude-cognitive/
 ├── scripts/
-│   ├── context-router-v2.py      # Attention dynamics
+│   ├── context-router-v2.py      # Attention dynamics + history logging
+│   ├── history.py                # History viewer CLI (v1.1+)
 │   ├── pool-auto-update.py       # Continuous pool updates
 │   ├── pool-loader.py            # SessionStart injection
 │   ├── pool-extractor.py         # Stop hook extraction
@@ -298,17 +417,19 @@ Need multi-team coordination, compliance features, or custom setup?
 
 ## Roadmap
 
-**v1.0 (Current - Production)**
+**v1.1 (Current - Production)**
 - ✅ Context router with attention dynamics
 - ✅ Pool coordinator (auto + manual)
 - ✅ Project-local strategy
 - ✅ CLI query tools
+- ✅ **Attention history tracking** (NEW in v1.1)
+- ✅ **History viewer CLI** (NEW in v1.1)
 
-**v1.1 (Next)**
+**v1.2 (Next)**
+- [ ] Graph visualization of attention flow
+- [ ] Collision detection (multiple instances, same file HOT)
 - [ ] Nemotron compression for pool summaries
 - [ ] Semantic relevance (embeddings vs keywords)
-- [ ] Auto-instance ID assignment
-- [ ] Web dashboard (optional)
 
 **v2.0 (Future)**
 - [ ] Conflict detection (multiple instances, same file)
