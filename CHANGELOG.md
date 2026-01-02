@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-01-02
+
+### Fixed
+- **Pool loader hardcoded fallback** (#2): Replaced hardcoded "MirrorBot/CVMP" fallback in `pool-loader.py` with dynamic project name detection
+  - Added `get_project_name()` function that detects project from:
+    1. Git remote URL (extracts repo name from origin)
+    2. Git repository root directory name
+    3. Current working directory name
+    4. Generic fallback: "Current Project"
+  - SessionStart hook now shows actual project name instead of misleading example data
+  - Thanks to @sbozh for reporting!
+
+---
+
 ## [1.1.0] - 2025-12-31
 
 ### Added
@@ -186,6 +200,7 @@ See [LICENSE](./LICENSE) for full text.
 
 ---
 
-[Unreleased]: https://github.com/GMaN1911/claude-cognitive/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/GMaN1911/claude-cognitive/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/GMaN1911/claude-cognitive/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/GMaN1911/claude-cognitive/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/GMaN1911/claude-cognitive/releases/tag/v1.0.0
