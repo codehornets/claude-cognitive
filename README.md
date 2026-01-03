@@ -436,6 +436,7 @@ Need multi-team coordination, compliance features, or custom setup?
 - [ ] Action confirmations (critical operations)
 - [ ] Integration with ES-AC learning (context preferences)
 - [ ] Oracle prediction (which files to pre-load)
+- [ ] Exploring integration with other AI coding assistants (Gemini CLI, Cursor, Aider)
 
 ---
 
