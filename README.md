@@ -116,23 +116,47 @@ claude
 python3 ~/.claude/scripts/pool-query.py --since 1h
 ```
 
-### 5. Customize Keywords (Optional, Recommended)
+### 5. Create Keywords Config (Required)
 
-**The scripts work immediately with MirrorBot example keywords** (50-70% savings).
+Create `.claude/keywords.json` in your project root:
 
-**For 80-95% savings:** Customize keywords to match your codebase.
-
-**Quick customization:**
 ```bash
-# Edit the keyword section
-nano ~/.claude/scripts/context-router-v2.py
-
-# See full guide:
-cat ~/.claude-cognitive/CUSTOMIZATION.md
+cp ~/.claude-cognitive/templates/keywords.json.example .claude/keywords.json
 ```
+
+Edit to match your project's documentation files and relevant keywords.
 
 **Full setup guide:** [SETUP.md](./SETUP.md)
 **Customization guide:** [CUSTOMIZATION.md](./CUSTOMIZATION.md)
+
+---
+
+## Project Configuration
+
+Create `.claude/keywords.json` in your project root to define project-specific keywords:
+
+```json
+{
+  "keywords": {
+    "path/to/doc.md": ["keyword1", "keyword2", "phrase to match"]
+  },
+  "co_activation": {
+    "path/to/doc.md": ["related/doc.md"]
+  },
+  "pinned": ["always/warm/file.md"]
+}
+```
+
+**Keywords:** Map documentation files to trigger words. When any keyword appears in your prompt (case-insensitive), the file becomes HOT.
+
+**Co-activation:** When a file activates, related files get a score boost.
+
+**Pinned:** Files that should always be at least WARM.
+
+The router checks for config in this order:
+1. `.claude/keywords.json` (project-local)
+2. `~/.claude/keywords.json` (global fallback)
+3. Empty defaults (no activation)
 
 ---
 

@@ -9,7 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-*Nothing yet - stay tuned for v1.2!*
+### Added
+- **Project-local keyword configuration**: Keywords, co-activation, and pinned files now load from `.claude/keywords.json` instead of being hardcoded in the script
+  - Config lookup order: project `.claude/keywords.json` > global `~/.claude/keywords.json` > empty defaults
+  - Added `load_project_config()` function in `context-router-v2.py`
+  - Added `templates/keywords.json.example` template file
+  - Added example `keywords.json` to small-project example
+
+### Changed
+- **docs_root resolution**: Now prefers project-local `.claude/` directory over global `~/.claude/`
+  - Priority: `CONTEXT_DOCS_ROOT` env > project `.claude/` > global `~/.claude/`
+- Updated all documentation to reference `.claude/keywords.json` instead of editing the Python script
+  - `CUSTOMIZATION.md`: Complete rewrite for JSON config
+  - `README.md`: Updated Quick Start step 5 and added Project Configuration section
+  - `SETUP.md`: Added "Create Keywords Config" step
+  - `docs/guides/getting-started.md`: Updated customization instructions
+  - `docs/concepts/attention-decay.md`: Updated pinned files and troubleshooting sections
+
+### Removed
+- Hardcoded MirrorBot-specific keywords, co-activation rules, and pinned files from `context-router-v2.py` (~220 lines)
 
 ---
 

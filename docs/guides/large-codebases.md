@@ -38,4 +38,4 @@ We'll write this guide based on actual beta user needs.
 
 **For now, see:**
 - [Getting Started](./getting-started.md) - Works for any size project
-- [CUSTOMIZATION.md](../../CUSTOMIZATION.md) - Keyword mapping strategies
+- [CUSTOMIZATION.md](../../CUSTOMIZATION.md) - Keyword mapping via `.claude/keywords.json`

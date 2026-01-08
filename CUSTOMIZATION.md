@@ -1,6 +1,6 @@
 # Customizing claude-cognitive for Your Project
 
-The scripts work out-of-the-box, but **you should customize keywords** to match your codebase for maximum effectiveness.
+The context router loads keywords from a project-local config file, making it easy to customize for any codebase.
 
 ---
 
@@ -15,47 +15,60 @@ The scripts work out-of-the-box, but **you should customize keywords** to match 
 
 ---
 
-## What Needs Customization
+## Configuration File
 
-### `scripts/context-router-v2.py`
+Create `.claude/keywords.json` in your project root:
 
-This file contains **keyword mappings** - what words activate which files.
-
-**Example from MirrorBot (shipped version):**
-```python
-KEYWORDS: Dict[str, List[str]] = {
-    "systems/legion.md": [
-        "legion", "5090", "rtx 5090", "local model", "vram", "oom"
-    ],
-    "systems/orin.md": [
-        "orin", "jetson", "sensory", "layer 0", "ppe"
-    ],
-}
-```
-
-**Your customization:**
-```python
-KEYWORDS: Dict[str, List[str]] = {
+```json
+{
+  "keywords": {
     "systems/production.md": [
-        "prod", "production", "deployment", "kubernetes", "k8s"
+      "prod", "production", "deploy", "kubernetes", "k8s"
     ],
     "systems/staging.md": [
-        "staging", "test env", "qa", "integration tests"
+      "staging", "test env", "qa", "integration tests"
     ],
     "modules/auth.md": [
-        "authentication", "login", "oauth", "jwt", "session"
+      "auth", "authentication", "login", "oauth", "jwt", "session"
     ],
     "modules/database.md": [
-        "database", "postgres", "sql", "migrations", "schema"
+      "database", "postgres", "sql", "migrations", "schema"
     ],
+    "integrations/stripe.md": [
+      "stripe", "payment", "billing", "subscription"
+    ]
+  },
+  "co_activation": {
+    "modules/auth.md": [
+      "modules/api.md",
+      "modules/database.md"
+    ],
+    "integrations/stripe.md": [
+      "modules/api.md"
+    ]
+  },
+  "pinned": [
+    "systems/network.md"
+  ]
 }
 ```
+
+The router checks for config in this order:
+1. `.claude/keywords.json` (project-local)
+2. `~/.claude/keywords.json` (global fallback)
+3. Empty defaults (no activation)
 
 ---
 
 ## Step-by-Step Customization
 
-### 1. Map Your `.claude/` Structure
+### 1. Copy the Template
+
+```bash
+cp ~/.claude-cognitive/templates/keywords.json.example .claude/keywords.json
+```
+
+### 2. Map Your `.claude/` Structure
 
 First, list what you have:
 
@@ -75,7 +88,7 @@ modules/database.md
 integrations/stripe.md
 ```
 
-### 2. Identify Keywords for Each File
+### 3. Identify Keywords for Each File
 
 For each file, ask: **"What words would make me want to see this file?"**
 
@@ -85,82 +98,94 @@ For each file, ask: **"What words would make me want to see this file?"**
 - Technical terms: "passport.js", "bcrypt", "password reset"
 - Common questions: "how do users log in", "session management"
 
-### 3. Edit `context-router-v2.py`
+### 4. Edit `.claude/keywords.json`
 
-Open the file:
-```bash
-nano ~/.claude/scripts/context-router-v2.py
-```
-
-Find the `KEYWORDS` section (around line 75):
-
-**Before (MirrorBot example):**
-```python
-KEYWORDS: Dict[str, List[str]] = {
-    "systems/legion.md": [
-        "legion", "5090", "rtx 5090", ...
-    ],
-    # ... many MirrorBot-specific entries
-}
-```
-
-**After (your project):**
-```python
-KEYWORDS: Dict[str, List[str]] = {
-    # === SYSTEMS ===
+```json
+{
+  "keywords": {
     "systems/production.md": [
-        "prod", "production", "deploy", "kubernetes", "k8s", "live"
+      "prod", "production", "deploy", "kubernetes", "k8s", "live"
     ],
     "systems/staging.md": [
-        "staging", "test", "qa", "integration", "pre-prod"
+      "staging", "test", "qa", "integration", "pre-prod"
     ],
-
-    # === MODULES ===
     "modules/auth.md": [
-        "auth", "authentication", "login", "oauth", "jwt", "session",
-        "passport", "bcrypt", "password", "reset", "signup", "signin"
+      "auth", "authentication", "login", "oauth", "jwt", "session",
+      "passport", "bcrypt", "password", "reset", "signup", "signin"
     ],
     "modules/api.md": [
-        "api", "endpoint", "route", "express", "fastapi", "rest",
-        "graphql", "controller", "handler"
+      "api", "endpoint", "route", "express", "fastapi", "rest",
+      "graphql", "controller", "handler"
     ],
     "modules/database.md": [
-        "database", "db", "postgres", "sql", "orm", "sequelize",
-        "migration", "schema", "query", "models"
+      "database", "db", "postgres", "sql", "orm", "sequelize",
+      "migration", "schema", "query", "models"
     ],
-
-    # === INTEGRATIONS ===
     "integrations/stripe.md": [
-        "stripe", "payment", "billing", "subscription", "checkout",
-        "webhook", "invoice", "customer"
-    ],
-}
-```
-
-### 4. Update Co-Activation Graph (Optional)
-
-The `CO_ACTIVATION` section (around line 185) defines which files boost each other.
-
-**Example:**
-```python
-CO_ACTIVATION: Dict[str, List[str]] = {
-    # When auth is mentioned, also boost API and database
+      "stripe", "payment", "billing", "subscription", "checkout",
+      "webhook", "invoice", "customer"
+    ]
+  },
+  "co_activation": {
     "modules/auth.md": [
-        "modules/api.md",      # Auth uses API routes
-        "modules/database.md", # Auth stores sessions in DB
+      "modules/api.md",
+      "modules/database.md"
     ],
-
-    # When Stripe is mentioned, boost API and webhooks
     "integrations/stripe.md": [
-        "modules/api.md",      # Stripe webhooks hit API
-        "modules/webhooks.md", # Webhook processing
-    ],
+      "modules/api.md",
+      "modules/webhooks.md"
+    ]
+  },
+  "pinned": ["systems/network.md"]
 }
 ```
 
-### 5. Adjust Decay Rates (Optional)
+### 5. Update Co-Activation Graph
 
-Different file categories fade at different rates:
+The `co_activation` section defines which files boost each other when one activates:
+
+```json
+{
+  "co_activation": {
+    "modules/auth.md": [
+      "modules/api.md",
+      "modules/database.md"
+    ],
+    "integrations/stripe.md": [
+      "modules/api.md",
+      "modules/webhooks.md"
+    ]
+  }
+}
+```
+
+When `auth.md` activates (score = 1.0), `api.md` and `database.md` get a +0.35 boost.
+
+### 6. Configure Pinned Files
+
+Files in the `pinned` array never decay below WARM:
+
+```json
+{
+  "pinned": [
+    "systems/network.md",
+    "systems/architecture.md"
+  ]
+}
+```
+
+**Use for:**
+- System architecture overview
+- Critical topology diagrams
+- Shared infrastructure everyone needs
+
+**Don't overuse:** 2-3 files max recommended
+
+---
+
+## Adjusting Decay Rates (Optional)
+
+Decay rates are still configured in the script itself. Edit `~/.claude/scripts/context-router-v2.py`:
 
 ```python
 DECAY_RATES = {
@@ -226,50 +251,59 @@ Auth should decay:
 ## Common Patterns
 
 ### Web Application
-```python
-KEYWORDS = {
+
+```json
+{
+  "keywords": {
     "systems/frontend.md": [
-        "frontend", "react", "vue", "ui", "component", "css"
+      "frontend", "react", "vue", "ui", "component", "css"
     ],
     "systems/backend.md": [
-        "backend", "api", "server", "node", "express", "django"
+      "backend", "api", "server", "node", "express", "django"
     ],
     "modules/auth.md": [
-        "auth", "login", "jwt", "session"
+      "auth", "login", "jwt", "session"
     ],
     "modules/database.md": [
-        "database", "postgres", "sql", "orm"
-    ],
+      "database", "postgres", "sql", "orm"
+    ]
+  }
 }
 ```
 
 ### Microservices
-```python
-KEYWORDS = {
+
+```json
+{
+  "keywords": {
     "systems/user-service.md": [
-        "user service", "users", "accounts", "profiles"
+      "user service", "users", "accounts", "profiles"
     ],
     "systems/payment-service.md": [
-        "payment", "billing", "stripe", "transactions"
+      "payment", "billing", "stripe", "transactions"
     ],
     "integrations/kafka.md": [
-        "kafka", "event bus", "messaging", "queue"
-    ],
+      "kafka", "event bus", "messaging", "queue"
+    ]
+  }
 }
 ```
 
 ### Data Pipeline
-```python
-KEYWORDS = {
+
+```json
+{
+  "keywords": {
     "modules/ingestion.md": [
-        "ingestion", "data collection", "sources", "extract"
+      "ingestion", "data collection", "sources", "extract"
     ],
     "modules/transformation.md": [
-        "transform", "etl", "clean", "normalize"
+      "transform", "etl", "clean", "normalize"
     ],
     "modules/storage.md": [
-        "storage", "s3", "data lake", "warehouse"
-    ],
+      "storage", "s3", "data lake", "warehouse"
+    ]
+  }
 }
 ```
 
@@ -277,13 +311,13 @@ KEYWORDS = {
 
 ## Tips for Good Keywords
 
-### ✅ DO:
+### DO:
 - **Include common variations**: "auth", "authentication", "login"
 - **Add technical terms**: "jwt", "oauth", "bcrypt"
 - **Include error messages**: "401", "unauthorized", "invalid token"
 - **Think like your questions**: "how do users log in"
 
-### ❌ DON'T:
+### DON'T:
 - Use overly generic words ("the", "system", "code")
 - Duplicate keywords across unrelated files
 - Add keywords just to have more (quality > quantity)
@@ -296,20 +330,30 @@ Check your keyword mapping:
 
 ```bash
 # From project root
-python3 - <<EOF
-import sys
-sys.path.insert(0, str(Path.home() / ".claude/scripts"))
-from context_router_v2 import KEYWORDS, CO_ACTIVATION
+python3 -c "
+import json
+from pathlib import Path
 
-print("Files mapped:", len(KEYWORDS))
-print("\nKeywords per file:")
-for file, keywords in sorted(KEYWORDS.items()):
-    print(f"  {file}: {len(keywords)} keywords")
+config_path = Path('.claude/keywords.json')
+if config_path.exists():
+    config = json.load(open(config_path))
+    keywords = config.get('keywords', {})
+    co_activation = config.get('co_activation', {})
+    pinned = config.get('pinned', [])
 
-print("\nCo-activations:")
-for file, related in sorted(CO_ACTIVATION.items()):
-    print(f"  {file} → {len(related)} related files")
-EOF
+    print('Files mapped:', len(keywords))
+    print('\nKeywords per file:')
+    for file, kws in sorted(keywords.items()):
+        print(f'  {file}: {len(kws)} keywords')
+
+    print('\nCo-activations:')
+    for file, related in sorted(co_activation.items()):
+        print(f'  {file} -> {len(related)} related files')
+
+    print('\nPinned files:', pinned)
+else:
+    print('No .claude/keywords.json found')
+"
 ```
 
 ---
@@ -317,15 +361,15 @@ EOF
 ## When to Recustomize
 
 **Recustomize when:**
-- ✅ Adding new files to `.claude/`
-- ✅ Files aren't activating when you expect
-- ✅ Frequently typing the same thing without file activation
-- ✅ Token usage higher than expected
+- Adding new files to `.claude/`
+- Files aren't activating when you expect
+- Frequently typing the same thing without file activation
+- Token usage higher than expected
 
 **Don't customize if:**
-- ❌ It's working well
-- ❌ You just set it up (give it time)
-- ❌ Making it perfect (good enough is fine)
+- It's working well
+- You just set it up (give it time)
+- Making it perfect (good enough is fine)
 
 ---
 
@@ -338,7 +382,7 @@ EOF
 4. Post in GitHub Discussions with example
 
 **If co-activation isn't working:**
-1. Check CO_ACTIVATION graph
+1. Check `co_activation` in your `keywords.json`
 2. Verify file names match exactly
 3. Start with direct mentions first
 
@@ -346,7 +390,7 @@ EOF
 
 ## Remember
 
-**The shipped MirrorBot keywords work as an example.**
+**Project-local config makes customization easy.**
 
 You'll still get 50-70% token savings without customization. Customization gets you to 80-95%.
 

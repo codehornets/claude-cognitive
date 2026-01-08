@@ -204,6 +204,29 @@ cp ~/.claude-cognitive/templates/modules/example-module.md .claude/modules/
 cp ~/.claude-cognitive/templates/integrations/example-integration.md .claude/integrations/
 ```
 
+### Create Keywords Config
+
+Create `.claude/keywords.json` with your project's keywords:
+
+```bash
+cp ~/.claude-cognitive/templates/keywords.json.example .claude/keywords.json
+```
+
+Edit to match your project's documentation files and relevant keywords:
+
+```json
+{
+  "keywords": {
+    "systems/your-system.md": ["keyword1", "keyword2"],
+    "modules/your-module.md": ["module-keyword", "function-name"]
+  },
+  "co_activation": {
+    "modules/your-module.md": ["systems/your-system.md"]
+  },
+  "pinned": ["systems/your-system.md"]
+}
+```
+
 ### Customize CLAUDE.md
 
 Edit `.claude/CLAUDE.md`:
@@ -396,9 +419,8 @@ Should see your test entry!
 ### Customize
 
 **Context Router:**
-- Edit `~/.claude/scripts/context-router-v2.py`
-- Adjust decay rates (lines 40-47)
-- Add custom keywords (lines 75-178)
+- Edit `.claude/keywords.json` to add project-specific keywords, co-activation rules, and pinned files
+- Edit `~/.claude/scripts/context-router-v2.py` to adjust decay rates (lines 43-51) or thresholds
 
 **Pool Coordinator:**
 - Edit `~/.claude/scripts/pool-auto-update.py`

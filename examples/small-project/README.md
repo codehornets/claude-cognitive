@@ -79,11 +79,11 @@ Watch for `ATTENTION STATE` header showing context injection!
 small-project/
 ├── .claude/                    # Claude Cognitive config
 │   ├── CLAUDE.md              # Project overview
+│   ├── keywords.json          # Keyword configuration
 │   ├── systems/
 │   │   └── local-dev.md       # Local environment
 │   └── modules/
-│       ├── api.md             # API documentation
-│       └── tasks.md           # Task manager docs
+│       └── api.md             # API documentation
 ├── src/
 │   ├── main.py                # FastAPI entry point
 │   ├── tasks.py               # Task business logic

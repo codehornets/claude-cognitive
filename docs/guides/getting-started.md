@@ -68,13 +68,13 @@ cp ~/.claude-cognitive/templates/* .claude/
 - Create docs for your core systems/modules
 - See [templates/modules/](../../templates/modules/) for examples
 
-**Customize keywords:**
+**Create keywords config:**
 ```bash
-# Edit keyword section
-nano ~/.claude/scripts/context-router-v2.py
+# Copy template
+cp ~/.claude-cognitive/templates/keywords.json.example .claude/keywords.json
 
-# See full guide:
-cat ~/.claude-cognitive/CUSTOMIZATION.md
+# Edit with your project's keywords
+nano .claude/keywords.json
 ```
 
 See [CUSTOMIZATION.md](../../CUSTOMIZATION.md) for detailed guidance.
@@ -271,11 +271,10 @@ python3 ~/.claude/scripts/pool-query.py
 
 **Customize keywords:**
 ```bash
-# Edit keyword mappings
-nano ~/.claude/scripts/context-router-v2.py
+# Edit your keywords config
+nano .claude/keywords.json
 
-# Find KEYWORDS section (~line 75)
-# Add your project-specific terms
+# Add project-specific terms to the "keywords" section
 ```
 
 See [CUSTOMIZATION.md](../../CUSTOMIZATION.md) for guidance.
@@ -309,7 +308,7 @@ Each file shows its tier:
 1. Read [CUSTOMIZATION.md](../../CUSTOMIZATION.md)
 2. Map your systems to `.claude/systems/*.md`
 3. Map your modules to `.claude/modules/*.md`
-4. Update keywords in `context-router-v2.py`
+4. Create `.claude/keywords.json` with your project's keywords
 5. Test with real work
 
 ### Advanced Use Cases

@@ -1,0 +1,20 @@
+{
+  "keywords": {
+    "systems/local-dev.md": [
+      "local", "localhost", "dev", "development", "server",
+      "fastapi", "sqlite", "port", "8000", "health",
+      "start", "stop", "restart", "database"
+    ],
+    "modules/api.md": [
+      "api", "endpoint", "route", "rest", "http",
+      "task", "tasks", "create", "update", "delete",
+      "get", "post", "put", "request", "response",
+      "json", "crud", "handler"
+    ]
+  },
+  "co_activation": {
+    "systems/local-dev.md": ["modules/api.md"],
+    "modules/api.md": ["systems/local-dev.md"]
+  },
+  "pinned": []
+}

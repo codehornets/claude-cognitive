@@ -140,13 +140,15 @@ DECAY_RATES = {
 
 ## Pinned Files (Never Decay Below WARM)
 
-Some files are so critical they should never fully evict:
+Some files are so critical they should never fully evict. Configure in `.claude/keywords.json`:
 
-```python
-PINNED_FILES = [
-    "systems/network.md",  # Network topology always warm
-    # Add your critical files here
-]
+```json
+{
+  "pinned": [
+    "systems/network.md",
+    "systems/architecture.md"
+  ]
+}
 ```
 
 **Use for:**
@@ -217,16 +219,16 @@ Attention scores are saved between Claude Code sessions:
 **Reason:** Keyword too broad (e.g., "system" matches everything).
 
 **Solution:**
-- Edit `context-router-v2.py` keyword mappings
+- Edit `.claude/keywords.json` keyword mappings
 - Use more specific keywords
 - See [CUSTOMIZATION.md](../../CUSTOMIZATION.md)
 
 ### "Co-activation not working"
 
-**Reason:** Files not linked in CO_ACTIVATION graph.
+**Reason:** Files not linked in `co_activation` section.
 
 **Solution:**
-- Edit `context-router-v2.py` CO_ACTIVATION section
+- Edit `.claude/keywords.json` `co_activation` section
 - Add relationships between related files
 
 ---
