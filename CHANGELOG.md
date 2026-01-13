@@ -11,6 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-01-12 (Phase 1 Complete - Usage Tracking)
+
+✅ **Phase 1 of v1.2 Intelligence Roadmap is complete**
+
+### Added
+- **Usage Tracking System** (Production Ready):
+  - Complete observation and learning infrastructure
+  - File access monitoring with Ralph Loop pattern
+  - Usefulness score calculation (0.0 to 1.0)
+  - Auto-adjusts keyword weights after 50 turns
+  - Integration with context-router-v2.py
+
+### Status
+- ✅ Phase 1 (Usage Tracking): Complete
+- 🔄 Phase 2 (Embeddings): Skipped - Moving to hologram-based discovery
+- 🔜 Phase 3 (Intelligent Agents): Planned for v2.x
+- 🔜 Phase 4 (Self-Learning): Planned for v2.x with hologram integration
+
+### Next
+- v2.0 introduces hologram-cognitive integration with auto-discovered DAG relationships
+- Breaking change: Moves away from manual keywords.json to automatic discovery
+- See v2.0 branch for hologram integration
+
+---
+
 ## [1.1.2] - 2026-01-08 (Development Preview)
 
 ⚠️ **This is a development preview release** - v1.2 Phase 1 features are experimental
