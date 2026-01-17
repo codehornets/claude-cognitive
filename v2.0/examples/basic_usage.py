@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 # Add hologram to path
-hologram_path = Path.home() / "hologram-cognitive/hologram"
+hologram_path = Path.home() / "hologram-cognitive"
 sys.path.insert(0, str(hologram_path))
 
 from hologram import HologramRouter
